@@ -1,0 +1,61 @@
+package br.com.daniel.danbarbersaasapi.domain.client;
+
+import br.com.daniel.danbarbersaasapi.domain.barber.Barber;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = "clients")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(of = "id")
+public class Client {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(nullable = false, length = 100)
+    private String name;
+
+    @Column(length = 20)
+    private String phone;
+
+    @Column(length = 20)
+    private String whatsapp;
+
+    @Column(unique = true)
+    private String email;
+
+    @Column(unique = true, length = 14)
+    private String cpf;
+
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
+    @Column(columnDefinition = "TEXT")
+    private String address;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "barber_id")
+    private Barber primaryBarber;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+}
