@@ -1,6 +1,6 @@
 # Estágio 1: Build (Construção do .jar)
 # Usando o Maven com Java 17 (se você usar o Java 21, basta trocar o 17 por 21 abaixo)
-FROM maven:3.9.6-eclipse-temurin-17 AS build
+FROM eclipse-temurin:21-jre-jammy AS build
 WORKDIR /app
 
 # Copia o pom.xml e baixa as dependências (ajuda no cache do Docker)
