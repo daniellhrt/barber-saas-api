@@ -52,7 +52,13 @@ public class SecurityConfigurations {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000")); // O seu front-end
+
+        // Coloque localhost e a URL do front-end na nuvem
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "https://barber-saas-front-155741735031.southamerica-east1.run.app"
+        ));
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
