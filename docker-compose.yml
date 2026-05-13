@@ -6,9 +6,9 @@ services:
     container_name: barbersaas_db_container
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: admin # Senha simples para desenvolvimento local
-      POSTGRES_DB: barbersaas_db
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
+      POSTGRES_DB: ${DB_NAME:-barbersaas_db}
     ports:
       - "5432:5432"
     volumes:

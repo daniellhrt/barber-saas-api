@@ -31,3 +31,19 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+
+# OS and IDE temporary files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Sensitive files and artifacts
+.junie/
+*.bundle
+

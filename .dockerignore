@@ -1,0 +1,43 @@
+# Build artifacts and folders
+target/
+.mvn/
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.env
+.env.local
+Thumbs.db
+
+# Build and test results
+*.class
+*.jar
+*.war
+*.log
+
+# JUnit
+test-results/
+
+# Node (if frontend is included)
+node_modules/
+.npm
+.next/
+
+# Local environment files
+.junie/
+*.bundle
+

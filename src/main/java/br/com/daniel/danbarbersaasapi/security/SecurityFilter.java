@@ -27,12 +27,18 @@ public class SecurityFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         var token = this.recoverToken(request);
         if (token != null) {
-            var email = tokenService.validateToken(token);
-            UserDetails user = userRepository.findByEmail(email);
-
-            if (user != null) {
-                var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            try {
+                var email = tokenService.validateToken(token);
+                if (email != null && !email.isEmpty()) {
+                    UserDetails user = userRepository.findByEmail(email);
+                    if (user != null) {
+                        var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    }
+                }
+            } catch (RuntimeException exception) {
+                // Token inválido ou expirado - continue sem autenticação
+                // O endpoint protegido retornará 401 se não houver autenticação
             }
         }
         filterChain.doFilter(request, response);
