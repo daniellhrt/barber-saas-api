@@ -21,11 +21,14 @@ import java.util.List;
 @RequestMapping("/barbers")
 public class BarberController {
 
-    @Autowired
-    private BarberRepository barberRepository;
+    private final BarberRepository barberRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+
+    public BarberController(BarberRepository barberRepository, UserRepository userRepository) {
+        this.barberRepository = barberRepository;
+        this.userRepository = userRepository;
+    }
 
     @PostMapping
     @Transactional // Garante que se der erro, ele desfaz a criação do User e do Barber

@@ -16,8 +16,11 @@ import java.util.List;
 @RequestMapping("/services")
 public class ServiceController {
 
-    @Autowired
-    private BarberServiceRepository repository;
+    private final BarberServiceRepository repository;
+
+    public ServiceController(BarberServiceRepository repository) {
+        this.repository = repository;
+    }
 
     @PostMapping
     public ResponseEntity<ServiceResponseDTO> create(@RequestBody @Valid ServiceRequestDTO data, UriComponentsBuilder uriBuilder) {

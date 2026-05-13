@@ -6,7 +6,6 @@ import br.com.daniel.danbarbersaasapi.domain.order.*;
 import br.com.daniel.danbarbersaasapi.repository.BarberRepository;
 import br.com.daniel.danbarbersaasapi.repository.ClientRepository;
 import br.com.daniel.danbarbersaasapi.repository.ServiceOrderRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,14 +16,17 @@ import java.util.UUID;
 @Service
 public class OrderService {
 
-    @Autowired
-    private ServiceOrderRepository orderRepository;
+    private final ServiceOrderRepository orderRepository;
 
-    @Autowired
-    private ClientRepository clientRepository;
+    private final ClientRepository clientRepository;
 
-    @Autowired
-    private BarberRepository barberRepository;
+    private final BarberRepository barberRepository;
+
+    public OrderService(ServiceOrderRepository orderRepository, ClientRepository clientRepository, BarberRepository barberRepository) {
+        this.orderRepository = orderRepository;
+        this.clientRepository = clientRepository;
+        this.barberRepository = barberRepository;
+    }
 
     @Transactional
     public ServiceOrder createOrder(OrderRequestDTO data) {

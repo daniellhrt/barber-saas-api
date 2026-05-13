@@ -5,11 +5,12 @@ spring:
   application:
     name: barber-saas-api
 
-  # Configurações de conexão com o PostgreSQL rodando no Neon (Nuvem)
+  # Configurações de conexão com o PostgreSQL
+  # Valores sensíveis (DB credentials) devem ser fornecidos via variáveis de ambiente
   datasource:
-    url: jdbc:postgresql://ep-flat-voice-acnlajh4-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channelBinding=require
-    username: neondb_owner
-    password: npg_kMoGY1Rse4Iz
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/barbersaas_db}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:}
     driver-class-name: org.postgresql.Driver
 
   # Configurações do Spring Data JPA e Hibernate
@@ -33,5 +34,6 @@ spring:
 api:
   security:
     token:
-      secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970 # Chave secreta (Mude em produção ou use variável de ambiente)
-      expiration: 86400000 # Tempo de expiração do token (Ex: 24 horas em milissegundos)
+      # secret should be provided via environment variable in production (JWT_SECRET)
+      secret: ${JWT_SECRET:}
+      expiration: ${JWT_EXPIRATION_MS:86400000} # Tempo de expiração do token (Ex: 24 horas em milissegundos)

@@ -18,11 +18,14 @@ import java.util.List;
 @RequestMapping("/clients")
 public class ClientController {
 
-    @Autowired
-    private ClientRepository clientRepository;
+    private final ClientRepository clientRepository;
 
-    @Autowired
-    private BarberRepository barberRepository;
+    private final BarberRepository barberRepository;
+
+    public ClientController(ClientRepository clientRepository, BarberRepository barberRepository) {
+        this.clientRepository = clientRepository;
+        this.barberRepository = barberRepository;
+    }
 
     @PostMapping
     public ResponseEntity<ClientResponseDTO> create(@RequestBody @Valid ClientRequestDTO data, UriComponentsBuilder uriBuilder) {

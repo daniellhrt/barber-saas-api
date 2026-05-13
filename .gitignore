@@ -31,3 +31,14 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Local environment files
+.env
+.env.local
+
+# Temporary files and OS
+.DS_Store
+
+# Local test memory files
+.junie/
+

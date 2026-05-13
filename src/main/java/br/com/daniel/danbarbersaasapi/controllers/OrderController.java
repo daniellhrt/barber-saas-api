@@ -17,8 +17,11 @@ import java.util.UUID;
 @RequestMapping("/orders")
 public class OrderController {
 
-    @Autowired
-    private OrderService orderService;
+    private final OrderService orderService;
+
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
 
     @PostMapping
     public ResponseEntity<OrderResponseDTO> create(@RequestBody @Valid OrderRequestDTO data, UriComponentsBuilder uriBuilder) {

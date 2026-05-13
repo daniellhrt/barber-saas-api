@@ -1,0 +1,8 @@
+target
+.git
+.mvn
+.idea
+.env
+.env.local
+.DS_Store
+.junie
