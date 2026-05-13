@@ -3,6 +3,7 @@ package br.com.daniel.danbarbersaasapi.controllers;
 import br.com.daniel.danbarbersaasapi.domain.client.Client;
 import br.com.daniel.danbarbersaasapi.domain.client.ClientRequestDTO;
 import br.com.daniel.danbarbersaasapi.domain.client.ClientResponseDTO;
+import br.com.daniel.danbarbersaasapi.domain.client.ClientUpdateDTO;
 import br.com.daniel.danbarbersaasapi.repository.BarberRepository;
 import br.com.daniel.danbarbersaasapi.repository.ClientRepository;
 import jakarta.validation.Valid;
@@ -55,5 +56,13 @@ public class ClientController {
                 .toList();
 
         return ResponseEntity.ok(clients);
+    }
+
+    @PutMapping("/{id}")
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<ClientResponseDTO> update(@PathVariable java.util.UUID id, @RequestBody ClientUpdateDTO data) {
+        var client = clientRepository.getReferenceById(id);
+        client.updateInfo(data);
+        return ResponseEntity.ok(new ClientResponseDTO(client));
     }
 }

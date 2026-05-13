@@ -58,4 +58,14 @@ public class Client {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public void updateInfo(ClientUpdateDTO data) {
+        if (data.name() != null) this.name = data.name();
+        if (data.phone() != null) this.phone = data.phone();
+        if (data.email() != null) this.email = data.email();
+        if (data.cpf() != null) this.cpf = data.cpf();
+        if (data.birthDate() != null) this.birthDate = data.birthDate();
+        if (data.notes() != null) this.notes = data.notes();
+        if (data.address() != null) this.address = data.address();
+    }
 }
