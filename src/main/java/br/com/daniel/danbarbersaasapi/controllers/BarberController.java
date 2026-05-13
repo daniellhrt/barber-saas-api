@@ -10,7 +10,7 @@ import br.com.daniel.danbarbersaasapi.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -25,9 +25,12 @@ public class BarberController {
 
     private final UserRepository userRepository;
 
-    public BarberController(BarberRepository barberRepository, UserRepository userRepository) {
+    private final PasswordEncoder passwordEncoder;
+
+    public BarberController(BarberRepository barberRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.barberRepository = barberRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping
@@ -39,7 +42,7 @@ public class BarberController {
         }
 
         // 2. Cria o Usuário de acesso para o Barbeiro
-        String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
+        String encryptedPassword = this.passwordEncoder.encode(data.password());
         User newUser = new User(data.email(), encryptedPassword, UserRole.BARBER);
         userRepository.save(newUser);
 
