@@ -33,21 +33,12 @@ public class AuthController {
     private TokenService tokenService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody @Valid AuthenticationDTO data) {
-        try {
-            var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
-            // É nesta linha abaixo que o Spring vai no banco checar o hash!
-            var auth = this.authenticationManager.authenticate(usernamePassword);
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid AuthenticationDTO data) {
+        var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
+        var auth = this.authenticationManager.authenticate(usernamePassword);
+        var token = tokenService.generateToken((User) Objects.requireNonNull(auth.getPrincipal()));
 
-            var token = tokenService.generateToken((User) Objects.requireNonNull(auth.getPrincipal()));
-
-            return ResponseEntity.ok(new LoginResponseDTO(token));
-
-        } catch (Exception e) {
-            // Se cair aqui, sabemos com 100% de certeza que o Java chegou na requisição,
-            // mas a senha não bateu ou o e-mail não existe no Neon!
-            return ResponseEntity.status(401).body("Erro de Autenticação: E-mail ou senha incorretos.");
-        }
+        return ResponseEntity.ok(new LoginResponseDTO(token));
     }
 
     @PostMapping("/register")
