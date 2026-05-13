@@ -14,7 +14,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.List;
 
 @RestController
-@RequestMapping("clients")
+@RequestMapping("/clients")
 public class ClientController {
 
     @Autowired

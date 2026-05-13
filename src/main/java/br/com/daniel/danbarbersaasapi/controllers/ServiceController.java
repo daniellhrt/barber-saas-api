@@ -13,7 +13,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.List;
 
 @RestController
-@RequestMapping("services")
+@RequestMapping("/services")
 public class ServiceController {
 
     @Autowired
