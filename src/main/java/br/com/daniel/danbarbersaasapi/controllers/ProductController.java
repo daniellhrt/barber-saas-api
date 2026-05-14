@@ -8,9 +8,11 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/products")
@@ -48,5 +50,27 @@ public class ProductController {
     public ResponseEntity<List<ProductResponseDTO>> listAll() {
         var products = repository.findAll().stream().map(ProductResponseDTO::new).toList();
         return ResponseEntity.ok(products);
+    }
+
+    @PutMapping("/{id}")
+    @Transactional
+    public ResponseEntity<ProductResponseDTO> update(@PathVariable UUID id, @RequestBody @Valid ProductRequestDTO data) {
+        var product = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Produto não encontrado"));
+
+        product.setName(data.name());
+        product.setCategory(data.category());
+        product.setBrand(data.brand());
+        product.setPrice(data.price());
+
+        if (data.stockQuantity() != null) {
+            product.setStockQuantity(data.stockQuantity());
+        }
+
+        product.setSku(data.sku());
+
+        repository.save(product);
+
+        return ResponseEntity.ok(new ProductResponseDTO(product));
     }
 }

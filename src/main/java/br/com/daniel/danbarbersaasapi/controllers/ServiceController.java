@@ -6,11 +6,15 @@ import br.com.daniel.danbarbersaasapi.domain.service.ServiceResponseDTO;
 import br.com.daniel.danbarbersaasapi.repository.BarberServiceRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/services")
@@ -42,5 +46,21 @@ public class ServiceController {
                 .toList();
 
         return ResponseEntity.ok(services);
+    }
+
+    @PutMapping("/{id}")
+    @Transactional
+    public ResponseEntity<ServiceResponseDTO> update(@PathVariable UUID id, @RequestBody @Valid ServiceRequestDTO data) {
+        var service = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Serviço não encontrado"));
+
+        service.setName(data.name());
+        service.setPrice(data.price());
+        service.setEstimatedDurationMinutes(data.estimatedDurationMinutes());
+        service.setDescription(data.description());
+
+        repository.save(service);
+
+        return ResponseEntity.ok(new ServiceResponseDTO(service));
     }
 }
