@@ -1,7 +1,7 @@
 package br.com.daniel.danbarbersaasapi.domain.order;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record OrderResponseDTO(
@@ -13,7 +13,7 @@ public record OrderResponseDTO(
         BigDecimal totalAmount,
         String paymentMethod,
         OrderStatus status,
-        LocalDateTime createdAt
+        OffsetDateTime createdAt
 ) {
     public OrderResponseDTO(ServiceOrder order) {
         this(

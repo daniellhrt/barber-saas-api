@@ -26,7 +26,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -158,7 +159,7 @@ class OrderControllerTest {
         order.setTotalAmount(totalAmount);
         order.setPaymentMethod("PIX");
         order.setStatus(OrderStatus.PAID);
-        order.setCreatedAt(LocalDateTime.of(2026, 5, 15, 10, 0));
+        order.setCreatedAt(OffsetDateTime.of(2026, 5, 15, 10, 0, 0, 0, ZoneOffset.UTC));
         order.getItems().add(new OrderItem());
         return order;
     }
