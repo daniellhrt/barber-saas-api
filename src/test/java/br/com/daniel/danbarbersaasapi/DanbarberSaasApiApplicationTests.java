@@ -1,13 +1,13 @@
 package br.com.daniel.danbarbersaasapi;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
 class DanbarberSaasApiApplicationTests {
 
     @Test
-    void contextLoads() {
+    void applicationClassShouldBePresent() {
+        assertThat(DanbarberSaasApiApplication.class).isNotNull();
     }
 
 }

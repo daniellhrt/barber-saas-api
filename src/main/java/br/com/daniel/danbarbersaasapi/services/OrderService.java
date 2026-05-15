@@ -82,4 +82,22 @@ public class OrderService {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido não encontrado."));
     }
+
+    @Transactional
+    public ServiceOrder updateOrder(UUID id, OrderRequestDTO data) {
+        ServiceOrder order = findById(id);
+
+        // Atualizações simples: método de pagamento e observações
+        order.setPaymentMethod(data.paymentMethod());
+        order.setNotes(data.notes());
+
+        // Nota: atualização de itens e recalculo total deve ser tratada por fluxo específico
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    public void deleteOrder(UUID id) {
+        ServiceOrder order = findById(id);
+        orderRepository.delete(order);
+    }
 }

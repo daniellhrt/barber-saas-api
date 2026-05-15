@@ -1,9 +1,14 @@
 package br.com.daniel.danbarbersaasapi.services;
 
+import br.com.daniel.danbarbersaasapi.domain.dashboard.AdvancedDashboardResponseDTO;
+import br.com.daniel.danbarbersaasapi.domain.dashboard.AdvancedKpiDTO;
 import br.com.daniel.danbarbersaasapi.domain.dashboard.ChartDataDTO;
 import br.com.daniel.danbarbersaasapi.domain.dashboard.DashboardResponseDTO;
-import br.com.daniel.danbarbersaasapi.domain.dashboard.KpiDTO;
 import br.com.daniel.danbarbersaasapi.domain.order.ServiceOrder;
+import br.com.daniel.danbarbersaasapi.domain.report.BarberAnalysisDTO;
+import br.com.daniel.danbarbersaasapi.domain.report.ClientAnalysisDTO;
+import br.com.daniel.danbarbersaasapi.repository.BarberRepository;
+import br.com.daniel.danbarbersaasapi.repository.ClientRepository;
 import br.com.daniel.danbarbersaasapi.repository.ServiceOrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,10 +19,11 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.TextStyle;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,14 +31,17 @@ import java.util.stream.Collectors;
 public class DashboardService {
 
     private final ServiceOrderRepository serviceOrderRepository;
+    private final BarberRepository barberRepository;
+    private final ClientRepository clientRepository;
+    private final ReportService reportService;
 
     public DashboardResponseDTO getDashboardData() {
         LocalDate today = LocalDate.now();
-        LocalDateTime startOfDay = today.atStartOfDay();
-        LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+        OffsetDateTime startOfDay = today.atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endOfDay = today.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
 
-        LocalDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay();
-        LocalDateTime endOfMonth = today.withDayOfMonth(today.lengthOfMonth()).atTime(LocalTime.MAX);
+        OffsetDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endOfMonth = today.withDayOfMonth(today.lengthOfMonth()).atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
 
         List<ServiceOrder> ordersToday = serviceOrderRepository.findByCreatedAtBetween(startOfDay, endOfDay);
         List<ServiceOrder> ordersMonth = serviceOrderRepository.findByCreatedAtBetween(startOfMonth, endOfMonth);
@@ -52,7 +61,7 @@ public class DashboardService {
             ticketMedio = faturamentoDia.divide(new BigDecimal(atendimentosHoje), 2, RoundingMode.HALF_UP);
         }
 
-        KpiDTO kpis = KpiDTO.builder()
+        br.com.daniel.danbarbersaasapi.domain.dashboard.KpiDTO kpis = br.com.daniel.danbarbersaasapi.domain.dashboard.KpiDTO.builder()
                 .faturamentoDia(faturamentoDia)
                 .faturamentoMes(faturamentoMes)
                 .atendimentosHoje(atendimentosHoje)
@@ -67,9 +76,100 @@ public class DashboardService {
                 .build();
     }
 
+    public AdvancedDashboardResponseDTO getAdvancedDashboardData() {
+        LocalDate today = LocalDate.now();
+        OffsetDateTime startOfDay = today.atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endOfDay = today.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+
+        OffsetDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endOfMonth = today.withDayOfMonth(today.lengthOfMonth()).atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+
+        OffsetDateTime startOfYear = today.withDayOfYear(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endOfYear = today.withDayOfYear(today.lengthOfYear()).atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+
+        OffsetDateTime startOfLastMonth = today.minusMonths(1).withDayOfMonth(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endOfLastMonth = today.minusMonths(1).withDayOfMonth(today.minusMonths(1).lengthOfMonth()).atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+
+        // Current period data
+        List<ServiceOrder> ordersToday = serviceOrderRepository.findByCreatedAtBetween(startOfDay, endOfDay);
+        List<ServiceOrder> ordersMonth = serviceOrderRepository.findByCreatedAtBetween(startOfMonth, endOfMonth);
+        List<ServiceOrder> ordersYear = serviceOrderRepository.findByCreatedAtBetween(startOfYear, endOfYear);
+        List<ServiceOrder> ordersLastMonth = serviceOrderRepository.findByCreatedAtBetween(startOfLastMonth, endOfLastMonth);
+
+        BigDecimal faturamentoDia = ordersToday.stream()
+                .map(ServiceOrder::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal faturamentoMes = ordersMonth.stream()
+                .map(ServiceOrder::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal faturamentoAno = ordersYear.stream()
+                .map(ServiceOrder::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal faturamentoLastMonth = ordersLastMonth.stream()
+                .map(ServiceOrder::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long atendimentosHoje = ordersToday.size();
+        long atendimentosMes = ordersMonth.size();
+
+        BigDecimal ticketMedio = BigDecimal.ZERO;
+        if (atendimentosHoje > 0) {
+            ticketMedio = faturamentoDia.divide(new BigDecimal(atendimentosHoje), 2, RoundingMode.HALF_UP);
+        }
+
+        // Growth percentage
+        BigDecimal growthPercentage = BigDecimal.ZERO;
+        if (faturamentoLastMonth.compareTo(BigDecimal.ZERO) > 0) {
+            growthPercentage = faturamentoMes.subtract(faturamentoLastMonth)
+                    .divide(faturamentoLastMonth, 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+        }
+
+        long totalClientes = clientRepository.count();
+        long totalBarbeiros = barberRepository.count();
+
+        AdvancedKpiDTO kpis = AdvancedKpiDTO.builder()
+                .faturamentoDia(faturamentoDia)
+                .faturamentoMes(faturamentoMes)
+                .faturamentoAno(faturamentoAno)
+                .atendimentosHoje(atendimentosHoje)
+                .atendimentosMes(atendimentosMes)
+                .ticketMedio(ticketMedio)
+                .growthPercentage(growthPercentage)
+                .totalClientes(totalClientes)
+                .totalBarbeiros(totalBarbeiros)
+                .build();
+
+        List<ChartDataDTO> chartData = getChartData(today);
+        List<ChartDataDTO> monthlyComparisonData = getMonthlyComparisonData();
+
+        // Get top performers
+        List<BarberAnalysisDTO> topBarbers = reportService.getComprehensiveReport("month").getBarberAnalysis()
+                .stream()
+                .limit(5)
+                .collect(Collectors.toList());
+
+        List<ClientAnalysisDTO> topClients = reportService.getComprehensiveReport("month").getTopClients()
+                .stream()
+                .limit(5)
+                .collect(Collectors.toList());
+
+        return AdvancedDashboardResponseDTO.builder()
+                .kpis(kpis)
+                .chartData(chartData)
+                .monthlyComparisonData(monthlyComparisonData)
+                .topBarbers(topBarbers)
+                .topClients(topClients)
+                .lastUpdated(OffsetDateTime.now(ZoneOffset.UTC).toString())
+                .build();
+    }
+
     private List<ChartDataDTO> getChartData(LocalDate today) {
-        LocalDateTime startOfWeek = today.with(DayOfWeek.MONDAY).atStartOfDay();
-        LocalDateTime endOfWeek = today.with(DayOfWeek.SUNDAY).atTime(LocalTime.MAX);
+        OffsetDateTime startOfWeek = today.with(DayOfWeek.MONDAY).atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endOfWeek = today.with(DayOfWeek.SUNDAY).atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
 
         List<ServiceOrder> ordersWeek = serviceOrderRepository.findByCreatedAtBetween(startOfWeek, endOfWeek);
 
@@ -91,5 +191,35 @@ public class DashboardService {
                         .build();
                 })
                 .collect(Collectors.toList());
+    }
+
+    private List<ChartDataDTO> getMonthlyComparisonData() {
+        LocalDate today = LocalDate.now();
+        List<ChartDataDTO> monthlyData = new ArrayList<>();
+
+        for (int i = 11; i >= 0; i--) {
+            LocalDate monthStart = today.minusMonths(i).withDayOfMonth(1);
+            LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
+
+            OffsetDateTime startOfMonth = monthStart.atStartOfDay().atOffset(ZoneOffset.UTC);
+            OffsetDateTime endOfMonth = monthEnd.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+
+            List<ServiceOrder> monthOrders = serviceOrderRepository.findByCreatedAtBetween(startOfMonth, endOfMonth);
+            BigDecimal monthTotal = monthOrders.stream()
+                    .map(ServiceOrder::getTotalAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            String monthName = monthStart.getMonth().getDisplayName(
+                    java.time.format.TextStyle.SHORT,
+                    new Locale("pt", "BR")
+            );
+
+            monthlyData.add(ChartDataDTO.builder()
+                    .name(monthName + "/" + monthStart.getYear())
+                    .total(monthTotal)
+                    .build());
+        }
+
+        return monthlyData;
     }
 }

@@ -7,7 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
@@ -32,7 +32,7 @@ public class Appointment {
     private Barber barber;
 
     @Column(name = "scheduled_time", nullable = false)
-    private LocalDateTime scheduledTime;
+    private OffsetDateTime scheduledTime;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -40,9 +40,9 @@ public class Appointment {
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private OffsetDateTime updatedAt;
 }

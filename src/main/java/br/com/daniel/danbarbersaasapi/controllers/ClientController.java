@@ -97,4 +97,14 @@ public class ClientController {
         client.updateInfo(data);
         return ResponseEntity.ok(new ClientResponseDTO(client));
     }
+
+    @DeleteMapping("/{id}")
+    @Transactional
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        var client = clientRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado."));
+
+        clientRepository.delete(client);
+        return ResponseEntity.noContent().build();
+    }
 }

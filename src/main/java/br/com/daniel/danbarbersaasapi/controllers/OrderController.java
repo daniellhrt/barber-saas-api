@@ -7,6 +7,7 @@ import br.com.daniel.danbarbersaasapi.services.OrderService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -47,7 +48,7 @@ public class OrderController {
         return ResponseEntity.ok(new OrderResponseDTO(orderService.findById(id)));
     }
 
-    // Endpoint de ouro para resolver o seu problema: O histórico do cliente
+
     @GetMapping("/client/{clientId}")
     public ResponseEntity<List<OrderResponseDTO>> getClientHistory(@PathVariable UUID clientId) {
         List<OrderResponseDTO> history = orderService.getClientHistory(clientId)
@@ -56,5 +57,19 @@ public class OrderController {
                 .toList();
 
         return ResponseEntity.ok(history);
+    }
+
+    @PutMapping("/{id}")
+    @Transactional
+    public ResponseEntity<OrderResponseDTO> update(@PathVariable UUID id, @RequestBody @Valid OrderRequestDTO data) {
+        ServiceOrder updated = orderService.updateOrder(id, data);
+        return ResponseEntity.ok(new OrderResponseDTO(updated));
+    }
+
+    @DeleteMapping("/{id}")
+    @Transactional
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        orderService.deleteOrder(id);
+        return ResponseEntity.noContent().build();
     }
 }
