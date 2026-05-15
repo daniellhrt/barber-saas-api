@@ -3,14 +3,13 @@ package br.com.daniel.danbarbersaasapi.controllers;
 import br.com.daniel.danbarbersaasapi.domain.service.BarberService;
 import br.com.daniel.danbarbersaasapi.domain.service.ServiceRequestDTO;
 import br.com.daniel.danbarbersaasapi.domain.service.ServiceResponseDTO;
+import br.com.daniel.danbarbersaasapi.infra.exception.ResourceNotFoundException;
 import br.com.daniel.danbarbersaasapi.repository.BarberServiceRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
@@ -48,11 +47,19 @@ public class ServiceController {
         return ResponseEntity.ok(services);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ServiceResponseDTO> getById(@PathVariable UUID id) {
+        var service = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado."));
+
+        return ResponseEntity.ok(new ServiceResponseDTO(service));
+    }
+
     @PutMapping("/{id}")
     @Transactional
     public ResponseEntity<ServiceResponseDTO> update(@PathVariable UUID id, @RequestBody @Valid ServiceRequestDTO data) {
         var service = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Serviço não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado."));
 
         service.setName(data.name());
         service.setPrice(data.price());
@@ -62,5 +69,16 @@ public class ServiceController {
         repository.save(service);
 
         return ResponseEntity.ok(new ServiceResponseDTO(service));
+    }
+
+    @DeleteMapping("/{id}")
+    @Transactional
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        if (!repository.existsById(id)) {
+            throw new ResourceNotFoundException("Serviço não encontrado.");
+        }
+
+        repository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

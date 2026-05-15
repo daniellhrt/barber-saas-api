@@ -3,6 +3,8 @@ package br.com.daniel.danbarbersaasapi.services;
 import br.com.daniel.danbarbersaasapi.domain.barber.Barber;
 import br.com.daniel.danbarbersaasapi.domain.client.Client;
 import br.com.daniel.danbarbersaasapi.domain.order.*;
+import br.com.daniel.danbarbersaasapi.infra.exception.BusinessException;
+import br.com.daniel.danbarbersaasapi.infra.exception.ResourceNotFoundException;
 import br.com.daniel.danbarbersaasapi.repository.BarberRepository;
 import br.com.daniel.danbarbersaasapi.repository.ClientRepository;
 import br.com.daniel.danbarbersaasapi.repository.ServiceOrderRepository;
@@ -29,10 +31,14 @@ public class OrderService {
     @Transactional
     public ServiceOrder createOrder(OrderRequestDTO data) {
         Client client = clientRepository.findById(data.clientId())
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado."));
 
         Barber barber = barberRepository.findById(data.barberId())
-                .orElseThrow(() -> new RuntimeException("Barbeiro não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Barbeiro não encontrado."));
+
+        if (data.items() == null || data.items().isEmpty()) {
+            throw new BusinessException("O pedido deve conter ao menos um item.");
+        }
 
         ServiceOrder order = new ServiceOrder();
         order.setClient(client);
@@ -66,5 +72,14 @@ public class OrderService {
 
     public List<ServiceOrder> getClientHistory(UUID clientId) {
         return orderRepository.findByClientIdOrderByCreatedAtDesc(clientId);
+    }
+
+    public List<ServiceOrder> findAllOrders() {
+        return orderRepository.findAll();
+    }
+
+    public ServiceOrder findById(UUID id) {
+        return orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido não encontrado."));
     }
 }

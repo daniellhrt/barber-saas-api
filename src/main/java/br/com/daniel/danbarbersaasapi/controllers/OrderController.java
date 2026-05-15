@@ -28,6 +28,25 @@ public class OrderController {
         return ResponseEntity.created(uri).body(new OrderResponseDTO(newOrder));
     }
 
+    @GetMapping
+    public ResponseEntity<List<OrderResponseDTO>> listAll(@RequestParam(required = false) Integer limit) {
+        List<OrderResponseDTO> orders = orderService.findAllOrders()
+                .stream()
+                .map(OrderResponseDTO::new)
+                .toList();
+
+        if (limit != null && limit > 0 && orders.size() > limit) {
+            orders = orders.subList(0, limit);
+        }
+
+        return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderResponseDTO> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(new OrderResponseDTO(orderService.findById(id)));
+    }
+
     // Endpoint de ouro para resolver o seu problema: O histórico do cliente
     @GetMapping("/client/{clientId}")
     public ResponseEntity<List<OrderResponseDTO>> getClientHistory(@PathVariable UUID clientId) {

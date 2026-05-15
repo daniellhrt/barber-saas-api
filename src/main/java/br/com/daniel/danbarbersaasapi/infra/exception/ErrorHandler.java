@@ -10,6 +10,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
+
 
 @RestControllerAdvice
 public class ErrorHandler {
@@ -20,12 +22,33 @@ public class ErrorHandler {
         return ResponseEntity.notFound().build();
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<?> tratarResourceNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErroMessage(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<?> tratarResponseStatus(ResponseStatusException ex) {
+        var status = ex.getStatusCode();
+        var message = ex.getReason() != null ? ex.getReason() : "Erro na requisição.";
+        return ResponseEntity.status(status).body(new ErroMessage(message));
+    }
+
     // 2. Tratamento para ERRO 400 (Bad Request - Validação de Campos como @NotBlank)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> tratarErro400(MethodArgumentNotValidException ex) {
         var erros = ex.getFieldErrors();
-        // Mapeia os erros feios do Spring para um DTO limpo só com o Campo e a Mensagem
         return ResponseEntity.badRequest().body(erros.stream().map(DadosErroValidacao::new).toList());
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<?> tratarBusinessException(BusinessException ex) {
+        return ResponseEntity.badRequest().body(new ErroMessage(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<?> tratarConflictException(ConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErroMessage(ex.getMessage()));
     }
 
     // 3. Tratamento para Senha Incorreta

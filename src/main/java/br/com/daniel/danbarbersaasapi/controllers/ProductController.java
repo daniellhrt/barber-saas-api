@@ -3,12 +3,13 @@ package br.com.daniel.danbarbersaasapi.controllers;
 import br.com.daniel.danbarbersaasapi.domain.product.Product;
 import br.com.daniel.danbarbersaasapi.domain.product.ProductRequestDTO;
 import br.com.daniel.danbarbersaasapi.domain.product.ProductResponseDTO;
+import br.com.daniel.danbarbersaasapi.infra.exception.ConflictException;
+import br.com.daniel.danbarbersaasapi.infra.exception.ResourceNotFoundException;
 import br.com.daniel.danbarbersaasapi.repository.ProductRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
@@ -27,6 +28,10 @@ public class ProductController {
     @PostMapping
     @Transactional
     public ResponseEntity<ProductResponseDTO> create(@RequestBody @Valid ProductRequestDTO data, UriComponentsBuilder uriBuilder) {
+        if (data.sku() != null && repository.existsBySku(data.sku())) {
+            throw new ConflictException("SKU já cadastrado para outro produto.");
+        }
+
         Product product = new Product();
         product.setName(data.name());
         product.setCategory(data.category());
@@ -52,11 +57,23 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductResponseDTO> getById(@PathVariable UUID id) {
+        var product = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado."));
+
+        return ResponseEntity.ok(new ProductResponseDTO(product));
+    }
+
     @PutMapping("/{id}")
     @Transactional
     public ResponseEntity<ProductResponseDTO> update(@PathVariable UUID id, @RequestBody @Valid ProductRequestDTO data) {
         var product = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Produto não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado."));
+
+        if (data.sku() != null && !data.sku().equals(product.getSku()) && repository.existsBySku(data.sku())) {
+            throw new ConflictException("SKU já cadastrado para outro produto.");
+        }
 
         product.setName(data.name());
         product.setCategory(data.category());
@@ -72,5 +89,16 @@ public class ProductController {
         repository.save(product);
 
         return ResponseEntity.ok(new ProductResponseDTO(product));
+    }
+
+    @DeleteMapping("/{id}")
+    @Transactional
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        if (!repository.existsById(id)) {
+            throw new ResourceNotFoundException("Produto não encontrado.");
+        }
+
+        repository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
