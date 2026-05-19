@@ -38,6 +38,10 @@ api:
       secret: ${JWT_SECRET:change-me-in-production}
       expiration: ${JWT_EXPIRATION_MS:86400000}
 
+# Configuração do time zone para relatórios
+app:
+  time-zone: ${APP_TIME_ZONE:America/Sao_Paulo}
+
 # Logging
 logging:
   level:

@@ -11,18 +11,18 @@ import br.com.daniel.danbarbersaasapi.repository.BarberRepository;
 import br.com.daniel.danbarbersaasapi.repository.ClientRepository;
 import br.com.daniel.danbarbersaasapi.repository.ServiceOrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.TextStyle;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,18 +30,26 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DashboardService {
 
+    @Value("${app.time-zone:America/Sao_Paulo}")
+    private String dashboardZoneId;
+
+    private ZoneId dashboardZone() {
+        return ZoneId.of(dashboardZoneId);
+    }
+
     private final ServiceOrderRepository serviceOrderRepository;
     private final BarberRepository barberRepository;
     private final ClientRepository clientRepository;
     private final ReportService reportService;
 
     public DashboardResponseDTO getDashboardData() {
-        LocalDate today = LocalDate.now();
-        OffsetDateTime startOfDay = today.atStartOfDay().atOffset(ZoneOffset.UTC);
-        OffsetDateTime endOfDay = today.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+        ZoneId zone = dashboardZone();
+        LocalDate today = LocalDate.now(zone);
+        OffsetDateTime startOfDay = today.atStartOfDay(zone).toOffsetDateTime();
+        OffsetDateTime endOfDay = today.atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
 
-        OffsetDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay().atOffset(ZoneOffset.UTC);
-        OffsetDateTime endOfMonth = today.withDayOfMonth(today.lengthOfMonth()).atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+        OffsetDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay(zone).toOffsetDateTime();
+        OffsetDateTime endOfMonth = today.withDayOfMonth(today.lengthOfMonth()).atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
 
         List<ServiceOrder> ordersToday = serviceOrderRepository.findByCreatedAtBetween(startOfDay, endOfDay);
         List<ServiceOrder> ordersMonth = serviceOrderRepository.findByCreatedAtBetween(startOfMonth, endOfMonth);
@@ -77,18 +85,19 @@ public class DashboardService {
     }
 
     public AdvancedDashboardResponseDTO getAdvancedDashboardData() {
-        LocalDate today = LocalDate.now();
-        OffsetDateTime startOfDay = today.atStartOfDay().atOffset(ZoneOffset.UTC);
-        OffsetDateTime endOfDay = today.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+        ZoneId zone = dashboardZone();
+        LocalDate today = LocalDate.now(zone);
+        OffsetDateTime startOfDay = today.atStartOfDay(zone).toOffsetDateTime();
+        OffsetDateTime endOfDay = today.atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
 
-        OffsetDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay().atOffset(ZoneOffset.UTC);
-        OffsetDateTime endOfMonth = today.withDayOfMonth(today.lengthOfMonth()).atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+        OffsetDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay(zone).toOffsetDateTime();
+        OffsetDateTime endOfMonth = today.withDayOfMonth(today.lengthOfMonth()).atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
 
-        OffsetDateTime startOfYear = today.withDayOfYear(1).atStartOfDay().atOffset(ZoneOffset.UTC);
-        OffsetDateTime endOfYear = today.withDayOfYear(today.lengthOfYear()).atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+        OffsetDateTime startOfYear = today.withDayOfYear(1).atStartOfDay(zone).toOffsetDateTime();
+        OffsetDateTime endOfYear = today.withDayOfYear(today.lengthOfYear()).atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
 
-        OffsetDateTime startOfLastMonth = today.minusMonths(1).withDayOfMonth(1).atStartOfDay().atOffset(ZoneOffset.UTC);
-        OffsetDateTime endOfLastMonth = today.minusMonths(1).withDayOfMonth(today.minusMonths(1).lengthOfMonth()).atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+        OffsetDateTime startOfLastMonth = today.minusMonths(1).withDayOfMonth(1).atStartOfDay(zone).toOffsetDateTime();
+        OffsetDateTime endOfLastMonth = today.minusMonths(1).withDayOfMonth(today.minusMonths(1).lengthOfMonth()).atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
 
         // Current period data
         List<ServiceOrder> ordersToday = serviceOrderRepository.findByCreatedAtBetween(startOfDay, endOfDay);
@@ -168,8 +177,9 @@ public class DashboardService {
     }
 
     private List<ChartDataDTO> getChartData(LocalDate today) {
-        OffsetDateTime startOfWeek = today.with(DayOfWeek.MONDAY).atStartOfDay().atOffset(ZoneOffset.UTC);
-        OffsetDateTime endOfWeek = today.with(DayOfWeek.SUNDAY).atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+        ZoneId zone = dashboardZone();
+        OffsetDateTime startOfWeek = today.with(DayOfWeek.MONDAY).atStartOfDay(zone).toOffsetDateTime();
+        OffsetDateTime endOfWeek = today.with(DayOfWeek.SUNDAY).atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
 
         List<ServiceOrder> ordersWeek = serviceOrderRepository.findByCreatedAtBetween(startOfWeek, endOfWeek);
 
@@ -194,15 +204,16 @@ public class DashboardService {
     }
 
     private List<ChartDataDTO> getMonthlyComparisonData() {
-        LocalDate today = LocalDate.now();
+        ZoneId zone = dashboardZone();
+        LocalDate today = LocalDate.now(zone);
         List<ChartDataDTO> monthlyData = new ArrayList<>();
 
         for (int i = 11; i >= 0; i--) {
             LocalDate monthStart = today.minusMonths(i).withDayOfMonth(1);
             LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
 
-            OffsetDateTime startOfMonth = monthStart.atStartOfDay().atOffset(ZoneOffset.UTC);
-            OffsetDateTime endOfMonth = monthEnd.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+            OffsetDateTime startOfMonth = monthStart.atStartOfDay(zone).toOffsetDateTime();
+            OffsetDateTime endOfMonth = monthEnd.atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
 
             List<ServiceOrder> monthOrders = serviceOrderRepository.findByCreatedAtBetween(startOfMonth, endOfMonth);
             BigDecimal monthTotal = monthOrders.stream()

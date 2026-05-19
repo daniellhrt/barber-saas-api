@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 
 @Service
@@ -46,6 +46,6 @@ public class TokenService {
     }
 
     private Instant genExpirationDate() {
-        return LocalDateTime.now().plusHours(24).atZone(java.time.ZoneId.of("America/Sao_Paulo")).toInstant();
+        return Instant.now().plus(24, ChronoUnit.HOURS);
     }
 }

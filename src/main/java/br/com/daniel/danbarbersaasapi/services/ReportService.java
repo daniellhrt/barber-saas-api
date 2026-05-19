@@ -1,6 +1,5 @@
 package br.com.daniel.danbarbersaasapi.services;
 
-import br.com.daniel.danbarbersaasapi.domain.order.OrderItem;
 import br.com.daniel.danbarbersaasapi.domain.order.ServiceOrder;
 import br.com.daniel.danbarbersaasapi.domain.report.*;
 import br.com.daniel.danbarbersaasapi.repository.BarberRepository;
@@ -8,15 +7,15 @@ import br.com.daniel.danbarbersaasapi.repository.ClientRepository;
 import br.com.daniel.danbarbersaasapi.repository.ServiceOrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,29 +24,37 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ReportService {
 
+    @Value("${app.time-zone:America/Sao_Paulo}")
+    private String reportZoneId;
+
+    private ZoneId reportZone() {
+        return ZoneId.of(reportZoneId);
+    }
+
     private final ServiceOrderRepository serviceOrderRepository;
     private final BarberRepository barberRepository;
     private final ClientRepository clientRepository;
 
     public ReportResponseDTO getReportByPeriod(String period) {
-        LocalDate today = LocalDate.now();
+        ZoneId zone = reportZone();
+        LocalDate today = LocalDate.now(zone);
         OffsetDateTime startDate;
-        OffsetDateTime endDate = today.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+        OffsetDateTime endDate = today.atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
 
         switch (period != null ? period.toLowerCase() : "today") {
             case "yesterday":
-                startDate = today.minusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
-                endDate = today.minusDays(1).atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+                startDate = today.minusDays(1).atStartOfDay(zone).toOffsetDateTime();
+                endDate = today.minusDays(1).atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
                 break;
             case "week":
-                startDate = today.with(DayOfWeek.MONDAY).atStartOfDay().atOffset(ZoneOffset.UTC);
+                startDate = today.with(DayOfWeek.MONDAY).atStartOfDay(zone).toOffsetDateTime();
                 break;
             case "month":
-                startDate = today.withDayOfMonth(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+                startDate = today.withDayOfMonth(1).atStartOfDay(zone).toOffsetDateTime();
                 break;
             case "today":
             default:
-                startDate = today.atStartOfDay().atOffset(ZoneOffset.UTC);
+                startDate = today.atStartOfDay(zone).toOffsetDateTime();
                 break;
         }
 
@@ -85,7 +92,9 @@ public class ReportService {
                     .barberName(order.getBarber() != null ? order.getBarber().getName() : "N/A")
                     .amount(order.getTotalAmount())
                     .items(itemsStr)
-                    .time(order.getCreatedAt() != null ? order.getCreatedAt().format(timeFormatter) : "")
+                    .time(order.getCreatedAt() != null
+                            ? order.getCreatedAt().atZoneSameInstant(zone).format(timeFormatter)
+                            : "")
                     .payment(order.getPaymentMethod())
                     .build();
         }).collect(Collectors.toList());
@@ -97,20 +106,21 @@ public class ReportService {
     }
 
     public ComprehensiveReportDTO getComprehensiveReport(String period) {
-        LocalDate today = LocalDate.now();
+        ZoneId zone = reportZone();
+        LocalDate today = LocalDate.now(zone);
         OffsetDateTime startDate;
-        OffsetDateTime endDate = today.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+        OffsetDateTime endDate = today.atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
 
         switch (period != null ? period.toLowerCase() : "month") {
             case "week":
-                startDate = today.with(DayOfWeek.MONDAY).atStartOfDay().atOffset(ZoneOffset.UTC);
+                startDate = today.with(DayOfWeek.MONDAY).atStartOfDay(zone).toOffsetDateTime();
                 break;
             case "year":
-                startDate = today.withDayOfYear(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+                startDate = today.withDayOfYear(1).atStartOfDay(zone).toOffsetDateTime();
                 break;
             case "month":
             default:
-                startDate = today.withDayOfMonth(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+                startDate = today.withDayOfMonth(1).atStartOfDay(zone).toOffsetDateTime();
                 break;
         }
 
@@ -190,6 +200,7 @@ public class ReportService {
     }
 
     private List<ClientAnalysisDTO> getTopClients(OffsetDateTime startDate, OffsetDateTime endDate, int limit) {
+        ZoneId zone = reportZone();
         Map<UUID, List<ServiceOrder>> ordersByClient = serviceOrderRepository
                 .findByCreatedAtBetween(startDate, endDate)
                 .stream()
@@ -210,7 +221,7 @@ public class ReportService {
             }
 
             String lastVisit = clientOrders.stream()
-                    .map(so -> so.getCreatedAt().toLocalDate().toString())
+                    .map(so -> so.getCreatedAt().atZoneSameInstant(zone).toLocalDate().toString())
                     .max(String::compareTo)
                     .orElse("N/A");
 
@@ -274,10 +285,11 @@ public class ReportService {
     }
 
     private List<DailyTrendDTO> getDailyTrends(OffsetDateTime startDate, OffsetDateTime endDate) {
+        ZoneId zone = reportZone();
         Map<LocalDate, List<ServiceOrder>> ordersByDate = serviceOrderRepository
                 .findByCreatedAtBetween(startDate, endDate)
                 .stream()
-                .collect(Collectors.groupingBy(so -> so.getCreatedAt().toLocalDate()));
+                .collect(Collectors.groupingBy(so -> so.getCreatedAt().atZoneSameInstant(zone).toLocalDate()));
 
         return ordersByDate.entrySet().stream().map(entry -> {
             LocalDate date = entry.getKey();
