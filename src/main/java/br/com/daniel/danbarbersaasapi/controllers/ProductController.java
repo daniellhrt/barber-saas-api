@@ -7,8 +7,8 @@ import br.com.daniel.danbarbersaasapi.infra.exception.ConflictException;
 import br.com.daniel.danbarbersaasapi.infra.exception.ResourceNotFoundException;
 import br.com.daniel.danbarbersaasapi.repository.ProductRepository;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -17,16 +17,12 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/products")
+@RequiredArgsConstructor
 public class ProductController {
 
     private final ProductRepository repository;
 
-    public ProductController(ProductRepository repository) {
-        this.repository = repository;
-    }
-
     @PostMapping
-    @Transactional
     public ResponseEntity<ProductResponseDTO> create(@RequestBody @Valid ProductRequestDTO data, UriComponentsBuilder uriBuilder) {
         if (data.sku() != null && repository.existsBySku(data.sku())) {
             throw new ConflictException("SKU já cadastrado para outro produto.");
@@ -66,7 +62,6 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    @Transactional
     public ResponseEntity<ProductResponseDTO> update(@PathVariable UUID id, @RequestBody @Valid ProductRequestDTO data) {
         var product = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado."));
@@ -92,7 +87,6 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    @Transactional
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         if (!repository.existsById(id)) {
             throw new ResourceNotFoundException("Produto não encontrado.");

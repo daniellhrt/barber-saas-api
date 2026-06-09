@@ -159,12 +159,12 @@ public class DashboardService {
         List<BarberAnalysisDTO> topBarbers = reportService.getComprehensiveReport("month").getBarberAnalysis()
                 .stream()
                 .limit(5)
-                .collect(Collectors.toList());
+                .toList();
 
         List<ClientAnalysisDTO> topClients = reportService.getComprehensiveReport("month").getTopClients()
                 .stream()
                 .limit(5)
-                .collect(Collectors.toList());
+                .toList();
 
         return AdvancedDashboardResponseDTO.builder()
                 .kpis(kpis)
@@ -192,7 +192,7 @@ public class DashboardService {
         return List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
                 .stream()
                 .map(day -> {
-                    String name = day.getDisplayName(TextStyle.SHORT, new Locale("pt", "BR"));
+                    String name = day.getDisplayName(TextStyle.SHORT, Locale.of("pt", "BR"));
                     // Capitalize first letter
                     name = name.substring(0, 1).toUpperCase() + name.substring(1);
                     return ChartDataDTO.builder()
@@ -200,7 +200,7 @@ public class DashboardService {
                         .total(dailyTotals.getOrDefault(day, BigDecimal.ZERO))
                         .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<ChartDataDTO> getMonthlyComparisonData() {
@@ -222,7 +222,7 @@ public class DashboardService {
 
             String monthName = monthStart.getMonth().getDisplayName(
                     java.time.format.TextStyle.SHORT,
-                    new Locale("pt", "BR")
+                    Locale.of("pt", "BR")
             );
 
             monthlyData.add(ChartDataDTO.builder()

@@ -14,8 +14,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Objects;
-
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -31,7 +29,7 @@ public class AuthController {
     public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid AuthenticationDTO data) {
         var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
         var auth = this.authenticationManager.authenticate(usernamePassword);
-        var token = tokenService.generateToken((User) Objects.requireNonNull(auth.getPrincipal()));
+        var token = tokenService.generateToken((User) auth.getPrincipal());
         return ResponseEntity.ok(new LoginResponseDTO(token));
     }
 

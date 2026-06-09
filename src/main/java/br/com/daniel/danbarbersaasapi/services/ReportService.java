@@ -97,7 +97,7 @@ public class ReportService {
                             : "")
                     .payment(order.getPaymentMethod())
                     .build();
-        }).collect(Collectors.toList());
+        }).toList();
 
         return ReportResponseDTO.builder()
                 .summary(summary)
@@ -196,7 +196,7 @@ public class ReportService {
                     .estimatedCommission(estimatedCommission)
                     .build();
         }).sorted(Comparator.comparing(BarberAnalysisDTO::getTotalRevenue).reversed())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<ClientAnalysisDTO> getTopClients(OffsetDateTime startDate, OffsetDateTime endDate, int limit) {
@@ -248,7 +248,7 @@ public class ReportService {
         })
                 .sorted(Comparator.comparing(ClientAnalysisDTO::getTotalSpent).reversed())
                 .limit(limit)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<PaymentMethodAnalysisDTO> getPaymentMethodAnalysis(OffsetDateTime startDate, OffsetDateTime endDate, BigDecimal totalAmount) {
@@ -281,7 +281,7 @@ public class ReportService {
                     .build();
         })
                 .sorted(Comparator.comparing(PaymentMethodAnalysisDTO::getTotalAmount).reversed())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<DailyTrendDTO> getDailyTrends(OffsetDateTime startDate, OffsetDateTime endDate) {
@@ -313,6 +313,6 @@ public class ReportService {
                     .build();
         })
                 .sorted(Comparator.comparing(DailyTrendDTO::getDate))
-                .collect(Collectors.toList());
+                .toList();
     }
 }

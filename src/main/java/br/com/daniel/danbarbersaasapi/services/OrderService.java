@@ -8,7 +8,7 @@ import br.com.daniel.danbarbersaasapi.infra.exception.ResourceNotFoundException;
 import br.com.daniel.danbarbersaasapi.repository.BarberRepository;
 import br.com.daniel.danbarbersaasapi.repository.ClientRepository;
 import br.com.daniel.danbarbersaasapi.repository.ServiceOrderRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,16 +17,12 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class OrderService {
 
-    @Autowired
-    private ServiceOrderRepository orderRepository;
-
-    @Autowired
-    private ClientRepository clientRepository;
-
-    @Autowired
-    private BarberRepository barberRepository;
+    private final ServiceOrderRepository orderRepository;
+    private final ClientRepository clientRepository;
+    private final BarberRepository barberRepository;
 
     @Transactional
     public ServiceOrder createOrder(OrderRequestDTO data) {

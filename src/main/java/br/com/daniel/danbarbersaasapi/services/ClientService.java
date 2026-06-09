@@ -17,7 +17,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -118,6 +117,6 @@ public class ClientService {
                     return null;
                 })
                 .filter(dto -> dto != null)
-                .collect(Collectors.toList());
+                .toList();
     }
 }
