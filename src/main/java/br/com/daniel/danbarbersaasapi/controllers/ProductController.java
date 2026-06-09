@@ -1,10 +1,12 @@
 package br.com.daniel.danbarbersaasapi.controllers;
 
+import br.com.daniel.danbarbersaasapi.domain.barber.Barber;
 import br.com.daniel.danbarbersaasapi.domain.product.Product;
 import br.com.daniel.danbarbersaasapi.domain.product.ProductRequestDTO;
 import br.com.daniel.danbarbersaasapi.domain.product.ProductResponseDTO;
 import br.com.daniel.danbarbersaasapi.infra.exception.ConflictException;
 import br.com.daniel.danbarbersaasapi.infra.exception.ResourceNotFoundException;
+import br.com.daniel.danbarbersaasapi.infra.security.TenantContext;
 import br.com.daniel.danbarbersaasapi.repository.ProductRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,10 +23,15 @@ import java.util.UUID;
 public class ProductController {
 
     private final ProductRepository repository;
+    private final TenantContext tenantContext;
 
     @PostMapping
-    public ResponseEntity<ProductResponseDTO> create(@RequestBody @Valid ProductRequestDTO data, UriComponentsBuilder uriBuilder) {
-        if (data.sku() != null && repository.existsBySku(data.sku())) {
+    public ResponseEntity<ProductResponseDTO> create(
+            @RequestBody @Valid ProductRequestDTO data,
+            UriComponentsBuilder uriBuilder) {
+        Barber owner = tenantContext.getCurrentBarber();
+
+        if (data.sku() != null && repository.existsBySkuAndOwnerBarberId(data.sku(), owner.getId())) {
             throw new ConflictException("SKU já cadastrado para outro produto.");
         }
 
@@ -33,13 +40,11 @@ public class ProductController {
         product.setCategory(data.category());
         product.setBrand(data.brand());
         product.setPrice(data.price());
-
-        // Se a quantidade vier nula do front, o Java mantém o = 0 que você colocou na classe
         if (data.stockQuantity() != null) {
             product.setStockQuantity(data.stockQuantity());
         }
-
         product.setSku(data.sku());
+        product.setOwnerBarber(owner);
 
         repository.save(product);
 
@@ -49,24 +54,35 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<List<ProductResponseDTO>> listAll() {
-        var products = repository.findAll().stream().map(ProductResponseDTO::new).toList();
+        Barber owner = tenantContext.getCurrentBarber();
+
+        var products = repository.findByOwnerBarberId(owner.getId())
+                .stream()
+                .map(ProductResponseDTO::new)
+                .toList();
         return ResponseEntity.ok(products);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponseDTO> getById(@PathVariable UUID id) {
-        var product = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado."));
+        Barber owner = tenantContext.getCurrentBarber();
 
+        var product = repository.findByIdAndOwnerBarberId(id, owner.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado."));
         return ResponseEntity.ok(new ProductResponseDTO(product));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductResponseDTO> update(@PathVariable UUID id, @RequestBody @Valid ProductRequestDTO data) {
-        var product = repository.findById(id)
+    public ResponseEntity<ProductResponseDTO> update(
+            @PathVariable UUID id,
+            @RequestBody @Valid ProductRequestDTO data) {
+        Barber owner = tenantContext.getCurrentBarber();
+
+        var product = repository.findByIdAndOwnerBarberId(id, owner.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado."));
 
-        if (data.sku() != null && !data.sku().equals(product.getSku()) && repository.existsBySku(data.sku())) {
+        if (data.sku() != null && !data.sku().equals(product.getSku())
+                && repository.existsBySkuAndOwnerBarberId(data.sku(), owner.getId())) {
             throw new ConflictException("SKU já cadastrado para outro produto.");
         }
 
@@ -74,25 +90,23 @@ public class ProductController {
         product.setCategory(data.category());
         product.setBrand(data.brand());
         product.setPrice(data.price());
-
         if (data.stockQuantity() != null) {
             product.setStockQuantity(data.stockQuantity());
         }
-
         product.setSku(data.sku());
 
         repository.save(product);
-
         return ResponseEntity.ok(new ProductResponseDTO(product));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Produto não encontrado.");
-        }
+        Barber owner = tenantContext.getCurrentBarber();
 
-        repository.deleteById(id);
+        var product = repository.findByIdAndOwnerBarberId(id, owner.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado."));
+
+        repository.delete(product);
         return ResponseEntity.noContent().build();
     }
 }

@@ -155,13 +155,15 @@ public class DashboardService {
         List<ChartDataDTO> chartData = getChartData(today);
         List<ChartDataDTO> monthlyComparisonData = getMonthlyComparisonData();
 
-        // Get top performers
-        List<BarberAnalysisDTO> topBarbers = reportService.getComprehensiveReport("month").getBarberAnalysis()
+        // Get top performers — uma única chamada ao relatório em vez de duas
+        var comprehensiveReport = reportService.getComprehensiveReport("month");
+
+        List<BarberAnalysisDTO> topBarbers = comprehensiveReport.getBarberAnalysis()
                 .stream()
                 .limit(5)
                 .toList();
 
-        List<ClientAnalysisDTO> topClients = reportService.getComprehensiveReport("month").getTopClients()
+        List<ClientAnalysisDTO> topClients = comprehensiveReport.getTopClients()
                 .stream()
                 .limit(5)
                 .toList();

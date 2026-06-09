@@ -1,5 +1,6 @@
 package br.com.daniel.danbarbersaasapi.domain.product;
 
+import br.com.daniel.danbarbersaasapi.domain.barber.Barber;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -39,6 +40,11 @@ public class Product {
 
     @Column(unique = true, length = 50)
     private String sku;
+
+    /** Dono do produto — usado para isolamento multi-tenant */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_barber_id")
+    private Barber ownerBarber;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

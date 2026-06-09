@@ -2,6 +2,7 @@ package br.com.daniel.danbarbersaasapi.services;
 
 import br.com.daniel.danbarbersaasapi.domain.order.ServiceOrder;
 import br.com.daniel.danbarbersaasapi.domain.report.*;
+import br.com.daniel.danbarbersaasapi.infra.util.DateRangeHelper;
 import br.com.daniel.danbarbersaasapi.repository.BarberRepository;
 import br.com.daniel.danbarbersaasapi.repository.ClientRepository;
 import br.com.daniel.danbarbersaasapi.repository.ServiceOrderRepository;
@@ -37,26 +38,9 @@ public class ReportService {
 
     public ReportResponseDTO getReportByPeriod(String period) {
         ZoneId zone = reportZone();
-        LocalDate today = LocalDate.now(zone);
-        OffsetDateTime startDate;
-        OffsetDateTime endDate = today.atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
-
-        switch (period != null ? period.toLowerCase() : "today") {
-            case "yesterday":
-                startDate = today.minusDays(1).atStartOfDay(zone).toOffsetDateTime();
-                endDate = today.minusDays(1).atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
-                break;
-            case "week":
-                startDate = today.with(DayOfWeek.MONDAY).atStartOfDay(zone).toOffsetDateTime();
-                break;
-            case "month":
-                startDate = today.withDayOfMonth(1).atStartOfDay(zone).toOffsetDateTime();
-                break;
-            case "today":
-            default:
-                startDate = today.atStartOfDay(zone).toOffsetDateTime();
-                break;
-        }
+        OffsetDateTime[] range = DateRangeHelper.resolve(period, zone);
+        OffsetDateTime startDate = range[0];
+        OffsetDateTime endDate = range[1];
 
         List<ServiceOrder> orders = serviceOrderRepository.findByCreatedAtBetween(startDate, endDate);
 
@@ -107,22 +91,9 @@ public class ReportService {
 
     public ComprehensiveReportDTO getComprehensiveReport(String period) {
         ZoneId zone = reportZone();
-        LocalDate today = LocalDate.now(zone);
-        OffsetDateTime startDate;
-        OffsetDateTime endDate = today.atTime(LocalTime.MAX).atZone(zone).toOffsetDateTime();
-
-        switch (period != null ? period.toLowerCase() : "month") {
-            case "week":
-                startDate = today.with(DayOfWeek.MONDAY).atStartOfDay(zone).toOffsetDateTime();
-                break;
-            case "year":
-                startDate = today.withDayOfYear(1).atStartOfDay(zone).toOffsetDateTime();
-                break;
-            case "month":
-            default:
-                startDate = today.withDayOfMonth(1).atStartOfDay(zone).toOffsetDateTime();
-                break;
-        }
+        OffsetDateTime[] range = DateRangeHelper.resolve(period != null ? period : "month", zone);
+        OffsetDateTime startDate = range[0];
+        OffsetDateTime endDate = range[1];
 
         List<ServiceOrder> orders = serviceOrderRepository.findByCreatedAtBetween(startDate, endDate);
 

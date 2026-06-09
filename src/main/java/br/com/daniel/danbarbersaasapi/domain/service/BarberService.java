@@ -1,5 +1,6 @@
 package br.com.daniel.danbarbersaasapi.domain.service;
 
+import br.com.daniel.danbarbersaasapi.domain.barber.Barber;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -33,6 +34,11 @@ public class BarberService {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    /** Dono do serviço — usado para isolamento multi-tenant */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_barber_id")
+    private Barber ownerBarber;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

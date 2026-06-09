@@ -66,4 +66,35 @@ public class ClientController {
         clientService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Retorna link do WhatsApp formatado com mensagem personalizada de retorno.
+     * Exemplo: https://wa.me/5511999999999?text=Oi%20João%2C%20sentimos%20sua%20falta!
+     */
+    @GetMapping("/{id}/whatsapp-link")
+    public ResponseEntity<WhatsAppLinkResponse> getWhatsappLink(@PathVariable UUID id) {
+        Client client = clientService.findById(id);
+        String phone = client.getWhatsapp() != null ? client.getWhatsapp() : client.getPhone();
+
+        if (phone == null || phone.isBlank()) {
+            return ResponseEntity.ok(new WhatsAppLinkResponse(null, "Cliente não possui telefone/WhatsApp cadastrado."));
+        }
+
+        String cleanPhone = phone.replaceAll("[^\\d]", "");
+        if (!cleanPhone.startsWith("55")) {
+            cleanPhone = "55" + cleanPhone;
+        }
+
+        String message = java.net.URLEncoder.encode(
+                "Oi " + client.getName() + ", tudo bem? Faz um tempo que não te vemos por aqui! " +
+                "Que tal agendar um horário? 💈",
+                java.nio.charset.StandardCharsets.UTF_8
+        );
+
+        String link = "https://wa.me/" + cleanPhone + "?text=" + message;
+        return ResponseEntity.ok(new WhatsAppLinkResponse(link, null));
+    }
+
+    /** DTO simples para resposta do WhatsApp link */
+    public record WhatsAppLinkResponse(String whatsappLink, String error) {}
 }

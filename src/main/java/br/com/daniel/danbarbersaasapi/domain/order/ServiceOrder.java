@@ -56,6 +56,11 @@ public class ServiceOrder {
     @OneToMany(mappedBy = "serviceOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
+    /** Dono da barbearia (tenant) — usado para isolamento multi-tenant */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_barber_id")
+    private Barber ownerBarber;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

@@ -1,9 +1,11 @@
 package br.com.daniel.danbarbersaasapi.controllers;
 
+import br.com.daniel.danbarbersaasapi.domain.barber.Barber;
 import br.com.daniel.danbarbersaasapi.domain.service.BarberService;
 import br.com.daniel.danbarbersaasapi.domain.service.ServiceRequestDTO;
 import br.com.daniel.danbarbersaasapi.domain.service.ServiceResponseDTO;
 import br.com.daniel.danbarbersaasapi.infra.exception.ResourceNotFoundException;
+import br.com.daniel.danbarbersaasapi.infra.security.TenantContext;
 import br.com.daniel.danbarbersaasapi.repository.BarberServiceRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,16 +22,20 @@ import java.util.UUID;
 public class ServiceController {
 
     private final BarberServiceRepository repository;
+    private final TenantContext tenantContext;
 
     @PostMapping
     public ResponseEntity<ServiceResponseDTO> create(
             @RequestBody @Valid ServiceRequestDTO data,
             UriComponentsBuilder uriBuilder) {
+        Barber owner = tenantContext.getCurrentBarber();
+
         BarberService newService = new BarberService();
         newService.setName(data.name());
         newService.setPrice(data.price());
         newService.setEstimatedDurationMinutes(data.estimatedDurationMinutes());
         newService.setDescription(data.description());
+        newService.setOwnerBarber(owner);
 
         repository.save(newService);
 
@@ -39,7 +45,9 @@ public class ServiceController {
 
     @GetMapping
     public ResponseEntity<List<ServiceResponseDTO>> listAll() {
-        List<ServiceResponseDTO> services = repository.findAll()
+        Barber owner = tenantContext.getCurrentBarber();
+
+        List<ServiceResponseDTO> services = repository.findByOwnerBarberId(owner.getId())
                 .stream()
                 .map(ServiceResponseDTO::new)
                 .toList();
@@ -48,7 +56,9 @@ public class ServiceController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ServiceResponseDTO> getById(@PathVariable UUID id) {
-        var service = repository.findById(id)
+        Barber owner = tenantContext.getCurrentBarber();
+
+        var service = repository.findByIdAndOwnerBarberId(id, owner.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado."));
         return ResponseEntity.ok(new ServiceResponseDTO(service));
     }
@@ -57,7 +67,9 @@ public class ServiceController {
     public ResponseEntity<ServiceResponseDTO> update(
             @PathVariable UUID id,
             @RequestBody @Valid ServiceRequestDTO data) {
-        var service = repository.findById(id)
+        Barber owner = tenantContext.getCurrentBarber();
+
+        var service = repository.findByIdAndOwnerBarberId(id, owner.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado."));
 
         service.setName(data.name());
@@ -71,10 +83,12 @@ public class ServiceController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Serviço não encontrado.");
-        }
-        repository.deleteById(id);
+        Barber owner = tenantContext.getCurrentBarber();
+
+        var service = repository.findByIdAndOwnerBarberId(id, owner.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Serviço não encontrado."));
+
+        repository.delete(service);
         return ResponseEntity.noContent().build();
     }
 }
