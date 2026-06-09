@@ -87,11 +87,29 @@ public class OrderService {
     public ServiceOrder updateOrder(UUID id, OrderRequestDTO data) {
         ServiceOrder order = findById(id);
 
-        // Atualizações simples: método de pagamento e observações
         order.setPaymentMethod(data.paymentMethod());
         order.setNotes(data.notes());
 
-        // Nota: atualização de itens e recalculo total deve ser tratada por fluxo específico
+        // Recalcula itens e total se novos itens foram enviados
+        if (data.items() != null && !data.items().isEmpty()) {
+            order.getItems().clear();
+
+            BigDecimal totalAmount = BigDecimal.ZERO;
+            for (OrderItemRequestDTO itemDto : data.items()) {
+                OrderItem item = new OrderItem();
+                item.setServiceOrder(order);
+                item.setReferenceId(itemDto.referenceId());
+                item.setType(itemDto.type());
+                item.setQuantity(itemDto.quantity());
+                item.setUnitPrice(itemDto.unitPrice());
+                order.getItems().add(item);
+
+                BigDecimal itemTotal = itemDto.unitPrice().multiply(new BigDecimal(itemDto.quantity()));
+                totalAmount = totalAmount.add(itemTotal);
+            }
+            order.setTotalAmount(totalAmount);
+        }
+
         return orderRepository.save(order);
     }
 

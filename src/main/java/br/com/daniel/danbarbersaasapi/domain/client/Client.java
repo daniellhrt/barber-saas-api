@@ -47,6 +47,14 @@ public class Client {
     @Column(columnDefinition = "TEXT")
     private String address;
 
+    /**
+     * Intervalo de retorno esperado em dias.
+     * Definido pelo barbeiro. Exemplo: 30 dias para clientes que cortam todo mês.
+     * Usado no endpoint /clients/overdue para alertar sobre clientes sem retorno.
+     */
+    @Column(name = "return_interval_days")
+    private Integer returnIntervalDays;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "barber_id")
     private Barber primaryBarber;
@@ -62,10 +70,12 @@ public class Client {
     public void updateInfo(ClientUpdateDTO data) {
         if (data.name() != null) this.name = data.name();
         if (data.phone() != null) this.phone = data.phone();
+        if (data.whatsapp() != null) this.whatsapp = data.whatsapp();
         if (data.email() != null) this.email = data.email();
         if (data.cpf() != null) this.cpf = data.cpf();
         if (data.birthDate() != null) this.birthDate = data.birthDate();
         if (data.notes() != null) this.notes = data.notes();
         if (data.address() != null) this.address = data.address();
+        if (data.returnIntervalDays() != null) this.returnIntervalDays = data.returnIntervalDays();
     }
 }

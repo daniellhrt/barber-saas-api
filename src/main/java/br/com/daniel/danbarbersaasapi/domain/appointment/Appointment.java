@@ -34,9 +34,23 @@ public class Appointment {
     @Column(name = "scheduled_time", nullable = false)
     private OffsetDateTime scheduledTime;
 
+    /**
+     * Duração do atendimento em minutos. Padrão: 30 min.
+     * O barbeiro pode personalizar conforme o tipo de serviço.
+     */
+    @Column(name = "duration_minutes", nullable = false)
+    private Integer durationMinutes = 30;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AppointmentStatus status;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
+    /** ID do serviço agendado — opcional, para calcular duração automaticamente */
+    @Column(name = "service_id")
+    private UUID serviceId;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -45,4 +59,9 @@ public class Appointment {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
+
+    /** Calcula o horário de término com base na duração */
+    public OffsetDateTime getEndTime() {
+        return scheduledTime.plusMinutes(durationMinutes);
+    }
 }

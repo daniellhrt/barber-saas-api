@@ -11,6 +11,9 @@ public record ClientUpdateDTO(
         @Size(max = 20, message = "O telefone deve ter no máximo 20 caracteres")
         String phone,
 
+        @Size(max = 20, message = "O WhatsApp deve ter no máximo 20 caracteres")
+        String whatsapp,
+
         @Email(message = "O e-mail informado é inválido")
         String email,
 
@@ -23,6 +26,9 @@ public record ClientUpdateDTO(
         String notes,
 
         @Size(max = 2000, message = "O endereço deve ter no máximo 2000 caracteres")
-        String address
+        String address,
+
+        /** Intervalo de retorno esperado em dias (ex: 30 para clientes que voltam todo mês) */
+        Integer returnIntervalDays
 ) {
 }

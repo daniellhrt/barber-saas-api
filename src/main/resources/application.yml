@@ -17,10 +17,11 @@ spring:
     # ddl-auto como 'validate' garante que o Hibernate não altere as tabelas criadas pelo Flyway
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    # show-sql apenas em dev — nunca em produção
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           time_zone: UTC
@@ -38,12 +39,25 @@ api:
       secret: ${JWT_SECRET:change-me-in-production}
       expiration: ${JWT_EXPIRATION_MS:86400000}
 
-# Configuração do time zone para relatórios
+# Configurações da aplicação
 app:
   time-zone: ${APP_TIME_ZONE:America/Sao_Paulo}
+  cors:
+    # Em produção: CORS_ALLOWED_ORIGINS=https://meuapp.com,https://outro.app.com
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+
+# Actuator — health check público
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
 
 # Logging
 logging:
   level:
     root: INFO
-    br.com.daniel.danbarbersaasapi: DEBUG
+    br.com.daniel.danbarbersaasapi: INFO
