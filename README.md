@@ -246,21 +246,6 @@ O projeto implementa diversas práticas de segurança:
 
 ---
 
-## 🌍 Variáveis de Ambiente
-
-| Variável | Padrão | Descrição |
-|----------|--------|-----------|
-| `DB_URL` | `jdbc:postgresql://localhost:5432/barbersaas_db` | URL de conexão PostgreSQL |
-| `DB_USER` | `postgres` | Usuário do banco |
-| `DB_PASS` | _(vazio)_ | Senha do banco |
-| `DB_NAME` | `barbersaas_db` | Nome do banco |
-| `JWT_SECRET` | `change-me-in-production` | Chave para assinar tokens JWT |
-| `JWT_EXPIRATION_MS` | `86400000` | Expiração do token (padrão: 24h) |
-| `SPRING_PROFILES_ACTIVE` | `dev` | Profile ativo (`dev`, `test`, `prod`) |
-| `PORT` | `8080` | Porta HTTP |
-| `app.time-zone` | `America/Sao_Paulo` | Fuso horário para cálculos do dashboard |
-
----
 
 ## 🐳 Docker
 
