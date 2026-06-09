@@ -5,10 +5,10 @@
 **Plataforma completa de gestão para barbearias — back-end robusto, seguro e pronto para produção.**
 
 [![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.x-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.6-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![JWT](https://img.shields.io/badge/JWT-Auth0-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Swagger](https://img.shields.io/badge/Swagger-OpenAPI_3-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](https://swagger.io/)
 [![Maven](https://img.shields.io/badge/Maven-Build-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)](https://maven.apache.org/)
 [![Flyway](https://img.shields.io/badge/Flyway-Migrations-CC0200?style=for-the-badge&logo=flyway&logoColor=white)](https://flywaydb.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
@@ -29,14 +29,16 @@
 
 | Módulo | Funcionalidades |
 |--------|----------------|
-| 🔐 **Autenticação** | Login e registro com JWT stateless, controle de acesso por roles |
-| 👤 **Clientes** | Cadastro, listagem e atualização de clientes |
-| 💈 **Barbeiros** | Gestão de barbeiros com controle de acesso ADMIN |
-| 🛠️ **Serviços** | Catálogo de serviços oferecidos pela barbearia |
-| 📦 **Produtos** | Gestão de produtos disponíveis |
-| 🧾 **Pedidos** | Criação e histórico de ordens de serviço |
-| 📊 **Dashboard** | KPIs em tempo real: faturamento do dia/mês/ano, ticket médio, crescimento |
-| 📈 **Relatórios** | Análise completa por período, top barbeiros, top clientes, comparativo mensal |
+| 🔐 **Autenticação** | Login e registro com JWT stateless, `GET /auth/me` para perfil logado |
+| 👤 **Clientes** | CRUD completo, controle de retorno (overdue), integração WhatsApp |
+| 📅 **Agenda** | Calendário com validação de conflito, duração configurável, transições de status |
+| 💈 **Barbeiros** | Gestão de barbeiros, multi-tenancy com isolamento por dono |
+| 🛠️ **Serviços** | Catálogo de serviços por barbeiro (multi-tenant) |
+| 📦 **Produtos** | Gestão de estoque com SKU único por tenant |
+| 🧾 **Pedidos** | Criação, histórico e recalculo automático de totais |
+| 📊 **Dashboard** | KPIs em tempo real, gráficos semanais, comparativo mensal |
+| 📈 **Relatórios** | Análise por período, top barbeiros, top clientes |
+| 💬 **WhatsApp** | Link direto com mensagem personalizada de retorno |
 
 ---
 
@@ -45,7 +47,7 @@
 ```
 Back-end
 ├── Java 21 (LTS)
-├── Spring Boot 4.x
+├── Spring Boot 3.4.6 (LTS)
 │   ├── Spring Web MVC        → REST API
 │   ├── Spring Data JPA       → ORM / persistência
 │   ├── Spring Security       → Autenticação e autorização
@@ -76,7 +78,11 @@ src/
         ├── repository/        → Acesso ao banco via Spring Data JPA
         ├── domain/            → Entidades JPA e DTOs de request/response
         ├── security/          → Filtros JWT, configuração Spring Security
-        └── infra/exception/   → Tratamento global de exceções
+        └── infra/
+            ├── config/        → OpenAPI/Swagger, CORS
+            ├── exception/     → Tratamento global de exceções
+            ├── security/      → TenantContext (multi-tenancy)
+            └── util/          → DateRangeHelper e utilitários
 ```
 
 ---
@@ -85,15 +91,31 @@ src/
 
 ### 🔐 Autenticação
 ```http
-POST /auth/register     → Registrar novo usuário
+POST /auth/register     → Registrar novo usuário (ADMIN)
 POST /auth/login        → Autenticar e receber JWT
+GET  /auth/me           → Perfil do usuário logado
 ```
 
 ### 👤 Clientes
 ```http
-GET    /clients         → Listar todos os clientes
-POST   /clients         → Criar novo cliente
-PUT    /clients/{id}    → Atualizar dados do cliente
+GET    /clients              → Listar todos os clientes
+POST   /clients              → Criar novo cliente
+GET    /clients/{id}         → Buscar por ID
+PUT    /clients/{id}         → Atualizar dados do cliente
+DELETE /clients/{id}         → Remover cliente
+GET    /clients/overdue      → Clientes com retorno atrasado
+GET    /clients/{id}/whatsapp-link → Link WhatsApp com mensagem de retorno
+```
+
+### 📅 Agenda (Appointments)
+```http
+POST   /appointments                      → Criar agendamento (valida conflito)
+GET    /appointments?startDate=&endDate=  → Calendário por período
+GET    /appointments/barber/{id}/day?date= → Agenda do barbeiro por dia
+GET    /appointments/{id}                 → Buscar por ID
+PUT    /appointments/{id}                 → Editar agendamento
+PATCH  /appointments/{id}/status          → Atualizar status (CONFIRMED → IN_PROGRESS → COMPLETED)
+DELETE /appointments/{id}                 → Cancelar agendamento
 ```
 
 ### 💈 Barbeiros
@@ -102,27 +124,40 @@ GET    /barbers         → Listar barbeiros
 POST   /barbers         → Criar barbeiro (ADMIN)
 ```
 
-### 🛠️ Serviços & Produtos
+### 🛠️ Serviços & Produtos (Multi-tenant)
 ```http
-GET    /services        → Listar serviços
-POST   /services        → Criar serviço (ADMIN)
-GET    /products        → Listar produtos
-POST   /products        → Criar produto (ADMIN)
+GET    /services        → Listar serviços do dono logado
+POST   /services        → Criar serviço
+PUT    /services/{id}   → Atualizar serviço
+DELETE /services/{id}   → Remover serviço
+GET    /products        → Listar produtos do dono logado
+POST   /products        → Criar produto
+PUT    /products/{id}   → Atualizar produto
+DELETE /products/{id}   → Remover produto
 ```
 
 ### 🧾 Pedidos
 ```http
 POST   /orders                   → Criar ordem de serviço
-GET    /orders/{clientId}        → Histórico do cliente
+GET    /orders                   → Listar pedidos
+GET    /orders/{id}              → Buscar por ID
+PUT    /orders/{id}              → Atualizar pedido
+DELETE /orders/{id}              → Remover pedido
+GET    /orders/client/{clientId} → Histórico do cliente
 ```
 
 ### 📊 Dashboard & Relatórios
 ```http
 GET    /dashboard/stats          → KPIs básicos do dia
-GET    /dashboard/advanced       → Dashboard completo com comparativos e rankings
-GET    /reports?period=today     → Relatório por período (today | week | month | year)
+GET    /dashboard/advanced       → Dashboard completo com rankings e comparativos
+GET    /reports?period=today     → Relatório por período (today | yesterday | week | month | year)
 GET    /reports/comprehensive    → Relatório com análise de barbeiros e clientes
-GET    /reports/by-period        → Relatório por período customizado
+```
+
+### 🛠️ Infraestrutura
+```http
+GET    /swagger-ui.html         → Documentação interativa da API
+GET    /actuator/health         → Health check
 ```
 
 ---
